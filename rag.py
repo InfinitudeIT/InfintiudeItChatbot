@@ -46,8 +46,8 @@ def retrieve_top_k_answers(query, model, index, questions, answers, k=3):
                 retrieved_questions.append(que)
     return retrieved_answers, retrieved_questions
 
-# ----------------- Setup -----------------
-DOCUMENT_FILE = r"E:\Infinitude IT\infinitude rag llm chatbot\Infinitude_IT_Data_QA.xlsx"
+DOCUMENT_FILE = "Infinitude_IT_Data_QA.xlsx"
+
 
 
 questions, answers = load_documents(DOCUMENT_FILE)
