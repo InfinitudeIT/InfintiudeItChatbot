@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfiniTudeIT Mini Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #chat-container {
+            width: 350px;
+            height: 550px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px #ccc;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #chat-header {
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #chat-history {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .user-message, .bot-message {
+            max-width: 75%;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #d1e7dd;
+            text-align: right;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background-color: #e7e7e7;
+            text-align: left;
+        }
+        #chat-input-container {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #ccc;
+            padding: 10px;
+            background: #fff;
+        }
+        #input-row {
+            display: flex;
+        }
+        #user-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 8px 12px;
+            margin-left: 5px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #suggestions {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .suggestion-button {
+            background-color: #166d19; /* Changed to black */
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            color: white; /* Updated to white for contrast */
+        }
+        .suggestion-button:hover {
+            background-color: #333; /* Darker hover effect */
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="chat-header">Agentic AI</div>
+    <div id="chat-history"></div>
+    <div id="chat-input-container">
+        <div id="input-row">
+            <input type="text" id="user-input" placeholder="Type your message..." onkeypress="handleKeyPress(event)" oninput="fetchSuggestions()">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+        <div id="suggestions"></div>
+    </div>
+</div>
+
+<script>
+    function sendMessage(suggestedText = null) {
+        let inputBox = document.getElementById("user-input");
+        let user_input = suggestedText || inputBox.value;
+        let chatHistory = document.getElementById("chat-history");
+
+        if (user_input.trim() === "") return;
+
+        // Show user message
+        let userMessage = document.createElement("div");
+        userMessage.className = "user-message";
+        userMessage.textContent = user_input;
+        chatHistory.appendChild(userMessage);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        inputBox.value = "";
+        document.getElementById("suggestions").innerHTML = "";
+
+        // Send to backend
+        fetch("/get_response", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ user_input: user_input })
+        })
+        .then(response => response.json())
+        .then(data => {
+            let botMessage = document.createElement("div");
+            botMessage.className = "bot-message";
+            botMessage.textContent = data.response;
+            chatHistory.appendChild(botMessage);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    }
+
+    function fetchSuggestions() {
+        const inputBox = document.getElementById("user-input");
+        const userInput = inputBox.value;
+
+        if (userInput.trim() === "") {
+            document.getElementById("suggestions").innerHTML = "";
+            return;
+        }
+
+        fetch("/get_suggestions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ user_input: userInput })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showSuggestions(data.suggestions);
+        });
+    }
+
+    function showSuggestions(suggestions) {
+        const suggestionsDiv = document.getElementById("suggestions");
+        suggestionsDiv.innerHTML = "";
+        suggestions.forEach(suggestion => {
+            const btn = document.createElement("button");
+            btn.className = "suggestion-button";
+            btn.innerText = suggestion;
+            btn.onclick = () => {
+                document.getElementById("user-input").value = suggestion;
+                sendMessage(suggestion);
+            };
+            suggestionsDiv.appendChild(btn);
+        });
+    }
+</script>
+
+</body>
+</html>
